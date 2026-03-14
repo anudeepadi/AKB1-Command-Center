@@ -1,10 +1,9 @@
 import { motion } from "framer-motion";
-import type { NavigationItem, WorkspaceIdentity } from "@shared/contracts";
+import type { WorkspaceIdentity } from "@shared/contracts";
 
 interface Props {
   page: "home" | "terminal";
   onNavigate: (page: "home" | "terminal") => void;
-  activeModule?: NavigationItem;
   identity?: WorkspaceIdentity;
   claudeOpen?: boolean;
   onToggleClaude?: () => void;
@@ -15,7 +14,6 @@ interface Props {
 export default function TopNav({
   page,
   onNavigate,
-  activeModule,
   identity,
   claudeOpen,
   onToggleClaude,
@@ -25,9 +23,7 @@ export default function TopNav({
   const subtitle =
     page === "home"
       ? "Operating system for elite delivery leaders"
-      : activeModule
-        ? `${activeModule.label} module`
-        : "Delivery workbench";
+      : "Delivery workbench";
 
   const primaryLabel =
     page === "home"
@@ -71,12 +67,6 @@ export default function TopNav({
           </button>
         </div>
 
-        {page === "terminal" && activeModule && !isMobile && (
-          <div className="topbar-active-module">
-            <span>{activeModule.icon}</span>
-            <span>{activeModule.label}</span>
-          </div>
-        )}
       </div>
 
       <div className="topbar-actions">

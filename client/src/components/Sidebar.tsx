@@ -21,6 +21,11 @@ export default function Sidebar({
   onCloseMobile,
   identity,
 }: Props) {
+  const moduleCount = sections.reduce(
+    (total, section) => total + section.items.length,
+    0,
+  );
+
   return (
     <>
       <button
@@ -48,7 +53,11 @@ export default function Sidebar({
             )}
           </div>
 
-          <button className="workspace-sidebar-toggle" onClick={onToggleCollapse}>
+          <button
+            className="workspace-sidebar-toggle"
+            onClick={onToggleCollapse}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
             {collapsed ? "→" : "←"}
           </button>
         </div>
@@ -91,6 +100,14 @@ export default function Sidebar({
             <>
               <div className="workspace-footer-label">{identity?.provider || "Gemini API Key"}</div>
               <div className="workspace-footer-value">{identity?.environment || "SQLite + Gemini"}</div>
+              <div className="workspace-footer-metrics">
+                <span className="workspace-footer-metric">
+                  <strong>{moduleCount}</strong> modules
+                </span>
+                <span className="workspace-footer-metric">
+                  <strong>{sections.length}</strong> groups
+                </span>
+              </div>
             </>
           )}
           <span className="workspace-footer-pill">⌘K</span>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import type { BootstrapData, ModuleId, NavigationItem } from "@shared/contracts";
+import type { BootstrapData, ModuleId } from "@shared/contracts";
 import { useIsMobile } from "@/hooks/use-mobile";
 import TopNav from "@/components/TopNav";
 import HomePage from "@/pages/HomePage";
@@ -16,10 +16,6 @@ async function fetchBootstrap(): Promise<BootstrapData> {
   return res.json();
 }
 
-function flattenModules(data?: BootstrapData): NavigationItem[] {
-  return data?.sections.flatMap((section) => section.items) ?? [];
-}
-
 export default function App() {
   const [page, setPage] = useState<"home" | "terminal">("home");
   const [activeTab, setActiveTab] = useState<ModuleId>("brief");
@@ -31,9 +27,6 @@ export default function App() {
     queryFn: fetchBootstrap,
     staleTime: 15_000,
   });
-
-  const modules = flattenModules(bootstrapQuery.data);
-  const activeModule = modules.find((module) => module.id === activeTab);
 
   useEffect(() => {
     if (isMobile) {
@@ -66,7 +59,6 @@ export default function App() {
       <TopNav
         page={page}
         onNavigate={setPage}
-        activeModule={activeModule}
         identity={bootstrapQuery.data?.identity}
         claudeOpen={claudeOpen}
         onToggleClaude={toggleClaude}

@@ -282,7 +282,9 @@ function titleFromMessage(message: string) {
 
 function previewText(message: string) {
   const normalized = message.replace(/\s+/g, " ").trim();
-  if (!normalized) return "No messages yet";
+  if (!normalized) {
+    return "Ask Gemini anything - your full conversation history is stored locally.";
+  }
   return normalized.length > 100 ? `${normalized.slice(0, 97)}...` : normalized;
 }
 
@@ -584,7 +586,7 @@ export class SqliteStorage implements IStorage {
       id,
       title,
       source,
-      preview: "No messages yet",
+      preview: "Ask Gemini anything - your full conversation history is stored locally.",
       messageCount: 0,
       createdAt: timestamp,
       updatedAt: timestamp,
@@ -637,7 +639,7 @@ export class SqliteStorage implements IStorage {
       id: sessionId,
       title,
       source,
-      preview: "No messages yet",
+      preview: "Ask Gemini anything - your full conversation history is stored locally.",
       messageCount: 0,
       createdAt: timestamp,
       updatedAt: timestamp,

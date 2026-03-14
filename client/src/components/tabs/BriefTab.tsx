@@ -48,6 +48,21 @@ const QUICK_LINKS: {
   { label: "Status Report", icon: "📋", tab: "status", col: "var(--orange)" },
 ];
 
+function getQuickLaunchSpanClass(index: number, total: number) {
+  const remainder = total % 4;
+  const startOfLastRow = total - remainder;
+
+  if (remainder === 1 && index === total - 1) {
+    return "quick-btn--span-4";
+  }
+
+  if (remainder === 2 && index >= startOfLastRow) {
+    return "quick-btn--span-2";
+  }
+
+  return "";
+}
+
 export default function BriefTab({ setActiveTab }: Props) {
   return (
     <div>
@@ -100,11 +115,11 @@ export default function BriefTab({ setActiveTab }: Props) {
       {/* Quick links */}
       <div className="ak-card" style={{ marginBottom: "14px" }}>
         <div className="ak-card-title">🚀 Quick Launch</div>
-        <div className="g4">
+        <div className="quick-grid">
           {QUICK_LINKS.map((q, i) => (
             <button
-              key={i}
-              className="quick-btn"
+              key={q.tab}
+              className={`quick-btn ${getQuickLaunchSpanClass(i, QUICK_LINKS.length)}`}
               onClick={() => setActiveTab(q.tab)}
               data-testid={`quick-link-${q.tab}`}
             >

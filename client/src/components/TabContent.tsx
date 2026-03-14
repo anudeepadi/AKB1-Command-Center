@@ -1,4 +1,5 @@
 import type { ModuleId } from "@shared/contracts";
+import type { ShowToast } from "@/lib/toast";
 import BriefTab from "./tabs/BriefTab";
 import PromptTab from "./tabs/PromptTab";
 import KpiTab from "./tabs/KpiTab";
@@ -15,7 +16,7 @@ import ClaudeFullTab from "./tabs/ClaudeFullTab";
 interface Props {
   activeTab: ModuleId;
   setActiveTab: (tab: ModuleId) => void;
-  showToast: (msg: string) => void;
+  showToast: ShowToast;
 }
 
 export default function TabContent({ activeTab, setActiveTab, showToast }: Props) {

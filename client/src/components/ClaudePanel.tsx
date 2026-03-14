@@ -2,11 +2,15 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ChatMessage, ChatSessionSummary } from "@shared/contracts";
+import type { ShowToast } from "@/lib/toast";
 
 interface Props {
   mode?: "panel" | "page";
   onClose?: () => void;
-  showToast: (msg: string) => void;
+  closeLabel?: string;
+  onResize?: () => void;
+  resizeLabel?: string;
+  showToast: ShowToast;
 }
 
 function escapeHtml(text: string): string {
@@ -44,6 +48,12 @@ const QUICK_PROMPTS = [
   "Build a 3-layer AI transformation roadmap.",
 ];
 
+const EMPTY_STATE = {
+  title: "Ready when you are",
+  description:
+    "Ask Gemini anything - your full conversation history is stored locally.",
+};
+
 async function fetchJson<T>(url: string): Promise<T> {
   const res = await fetch(url);
   if (!res.ok) {
@@ -56,6 +66,9 @@ async function fetchJson<T>(url: string): Promise<T> {
 export default function ClaudePanel({
   mode = "panel",
   onClose,
+  closeLabel = "Close",
+  onResize,
+  resizeLabel = "Standard",
   showToast,
 }: Props) {
   const [input, setInput] = useState("");
@@ -75,6 +88,7 @@ export default function ClaudePanel({
 
   const activeSession =
     sessions.find((session) => session.id === activeSessionId) ?? sessions[0];
+  const source = mode === "page" ? "Gemini workspace" : "Gemini panel";
 
   const createSession = async (source: string) => {
     const res = await fetch("/api/chat/sessions", {
@@ -84,7 +98,8 @@ export default function ClaudePanel({
     });
 
     if (!res.ok) {
-      throw new Error(`Failed to create session: ${res.status}`);
+      const detail = (await res.text()).trim();
+      throw new Error(detail || `Failed to create session: ${res.status}`);
     }
 
     const session = (await res.json()) as ChatSessionSummary;
@@ -94,10 +109,32 @@ export default function ClaudePanel({
     return session;
   };
 
+  const showCreateSessionError = (error: Error, retry: () => void) => {
+    showToast({
+      title: "Failed to create workspace site",
+      description: error.message,
+      tone: "error",
+      action: {
+        label: "Retry",
+        onClick: retry,
+      },
+    });
+  };
+
+  const retryCreateSession = () => {
+    autoCreateRef.current = true;
+    void createSession(source).catch((error: Error) => {
+      autoCreateRef.current = false;
+      showCreateSessionError(error, retryCreateSession);
+    });
+  };
+
   const createSessionMutation = useMutation({
-    mutationFn: () =>
-      createSession(mode === "page" ? "Gemini workspace" : "Gemini panel"),
-    onError: (error: Error) => showToast(error.message),
+    mutationFn: () => createSession(source),
+    onError: (error: Error) => {
+      autoCreateRef.current = false;
+      showCreateSessionError(error, retryCreateSession);
+    },
   });
 
   useEffect(() => {
@@ -106,14 +143,9 @@ export default function ClaudePanel({
     }
 
     if (sessions.length === 0 && !autoCreateRef.current) {
-      autoCreateRef.current = true;
-      void createSession(
-        mode === "page" ? "Gemini workspace" : "Gemini panel",
-      ).catch((error: Error) => {
-        showToast(error.message);
-      });
+      retryCreateSession();
     }
-  }, [activeSessionId, mode, qc, sessions, showToast]);
+  }, [activeSessionId, sessions, source]);
 
   const { data: messages = [] } = useQuery<ChatMessage[]>({
     enabled: Boolean(activeSession?.id),
@@ -154,9 +186,7 @@ export default function ClaudePanel({
 
   const ensureSessionId = async () => {
     if (activeSession?.id) return activeSession.id;
-    const session = await createSession(
-      mode === "page" ? "Gemini workspace" : "Gemini panel",
-    );
+    const session = await createSession(source);
     return session.id;
   };
 
@@ -284,6 +314,15 @@ export default function ClaudePanel({
           </div>
 
           <div className="assistant-header-actions">
+            {onResize && (
+              <button
+                className="ak-btn-secondary"
+                onClick={onResize}
+                data-testid="button-resize-claude"
+              >
+                Size: {resizeLabel}
+              </button>
+            )}
             <button
               className="ak-btn-secondary"
               onClick={() => clearMutation.mutate()}
@@ -297,46 +336,18 @@ export default function ClaudePanel({
                 onClick={onClose}
                 data-testid="button-close-claude"
               >
-                Close
+                {closeLabel}
               </button>
             )}
           </div>
         </div>
 
-        <AnimatePresence>
-          {messages.length === 0 && !streaming && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="assistant-prompts"
-            >
-              <div className="assistant-prompts-label">Quick prompts</div>
-              <div className="assistant-prompt-grid">
-                {QUICK_PROMPTS.map((prompt, index) => (
-                  <button
-                    key={prompt}
-                    className="chip"
-                    onClick={() => void sendMessage(prompt)}
-                    data-testid={`quick-prompt-${index}`}
-                  >
-                    {prompt}
-                  </button>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         <div className="assistant-thread">
           {messages.length === 0 && !streaming && (
             <div className="assistant-empty">
               <div className="assistant-empty-icon">◆</div>
-              <div className="assistant-empty-title">No messages yet</div>
-              <p>
-                Start a conversation and the backend will store the full Gemini
-                history locally.
-              </p>
+              <div className="assistant-empty-title">{EMPTY_STATE.title}</div>
+              <p>{EMPTY_STATE.description}</p>
             </div>
           )}
 
@@ -413,6 +424,31 @@ export default function ClaudePanel({
         </div>
 
         <div className="assistant-composer">
+          <AnimatePresence>
+            {messages.length === 0 && !streaming && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 6 }}
+                className="assistant-prompts"
+              >
+                <div className="assistant-prompts-label">Quick prompts</div>
+                <div className="assistant-prompt-grid">
+                  {QUICK_PROMPTS.map((prompt, index) => (
+                    <button
+                      key={prompt}
+                      className="chip"
+                      onClick={() => void sendMessage(prompt)}
+                      data-testid={`quick-prompt-${index}`}
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <div className="assistant-input-row">
             <textarea
               ref={textareaRef}

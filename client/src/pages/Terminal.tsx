@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type {
   ModuleId,
-  NavigationItem,
   NavigationSection,
   WorkspaceIdentity,
 } from "@shared/contracts";
@@ -11,11 +10,7 @@ import TabContent from "@/components/TabContent";
 import ClaudePanel from "@/components/ClaudePanel";
 import CommandPalette from "@/components/CommandPalette";
 import Toast from "@/components/Toast";
-
-export interface ToastState {
-  msg: string;
-  visible: boolean;
-}
+import type { ShowToast, ToastInput, ToastState } from "@/lib/toast";
 
 interface Props {
   sections: NavigationSection[];
@@ -30,9 +25,8 @@ interface Props {
   isMobile: boolean;
 }
 
-function flattenModules(sections: NavigationSection[]): NavigationItem[] {
-  return sections.flatMap((section) => section.items);
-}
+const ASSISTANT_PANEL_WIDTHS = [420, 520, 640] as const;
+const ASSISTANT_PANEL_LABELS = ["Narrow", "Standard", "Wide"] as const;
 
 export default function Terminal({
   sections,
@@ -46,21 +40,89 @@ export default function Terminal({
   setCmdOpen,
   isMobile,
 }: Props) {
-  const [toast, setToast] = useState<ToastState>({ msg: "", visible: false });
+  const [toast, setToast] = useState<ToastState>({
+    id: 0,
+    title: "",
+    visible: false,
+    tone: "info",
+  });
+  const [assistantPanelSizeIndex, setAssistantPanelSizeIndex] = useState(1);
+  const [assistantPanelMinimized, setAssistantPanelMinimized] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const toastTimer = useRef<number | null>(null);
-  const modules = flattenModules(sections);
-  const activeModule = modules.find((module) => module.id === activeTab);
 
-  const showToast = (msg: string) => {
-    setToast({ msg, visible: true });
+  const dismissToast = () => {
     if (toastTimer.current) {
       window.clearTimeout(toastTimer.current);
+      toastTimer.current = null;
     }
-    toastTimer.current = window.setTimeout(() => {
-      setToast((state) => ({ ...state, visible: false }));
-    }, 2200);
+
+    setToast((state) => ({ ...state, visible: false, action: undefined }));
+  };
+
+  const normalizeToast = (input: ToastInput) => {
+    if (typeof input !== "string") return input;
+
+    const message = input.trim();
+    if (!message) {
+      return {
+        title: "Update",
+      };
+    }
+
+    const isError =
+      /^error:/i.test(message) ||
+      /failed|request failed|unable to|could not|no response stream/i.test(
+        message,
+      );
+
+    if (isError) {
+      return {
+        title: "Something went wrong",
+        description: message.replace(/^error:\s*/i, ""),
+        tone: "error" as const,
+      };
+    }
+
+    return {
+      title: message,
+      tone: "info" as const,
+    };
+  };
+
+  const showToast: ShowToast = (input) => {
+    const next = normalizeToast(input);
+
+    setToast({
+      id: Date.now(),
+      visible: true,
+      title: next.title,
+      description: next.description,
+      tone: next.tone || "info",
+      action: next.action,
+      autoHideMs: next.autoHideMs,
+    });
+
+    if (toastTimer.current) {
+      window.clearTimeout(toastTimer.current);
+      toastTimer.current = null;
+    }
+
+    const autoHideMs =
+      next.autoHideMs ?? (next.tone === "error" || next.action ? 0 : 2600);
+
+    if (autoHideMs > 0) {
+      toastTimer.current = window.setTimeout(() => {
+        setToast((state) => ({ ...state, visible: false, action: undefined }));
+      }, autoHideMs);
+    }
+  };
+
+  const handleToastAction = () => {
+    const action = toast.action;
+    dismissToast();
+    action?.onClick();
   };
 
   useEffect(() => {
@@ -97,7 +159,24 @@ export default function Terminal({
     }
   }, [isMobile]);
 
+  useEffect(() => {
+    if (!claudeOpen || activeTab === "claude" || isMobile) {
+      setAssistantPanelMinimized(false);
+    }
+  }, [activeTab, claudeOpen, isMobile]);
+
+  useEffect(
+    () => () => {
+      if (toastTimer.current) {
+        window.clearTimeout(toastTimer.current);
+      }
+    },
+    [],
+  );
+
   const showSideAssistant = claudeOpen && activeTab !== "claude" && !isMobile;
+  const assistantPanelWidth = ASSISTANT_PANEL_WIDTHS[assistantPanelSizeIndex];
+  const assistantPanelLabel = ASSISTANT_PANEL_LABELS[assistantPanelSizeIndex];
 
   return (
     <div className="terminal-shell">
@@ -132,19 +211,6 @@ export default function Terminal({
                   ☰
                 </button>
               )}
-
-              <div>
-                <div className="workspace-section-label">
-                  {activeModule?.section || "Workspace"}
-                </div>
-                <h1 className="workspace-title">
-                  {activeModule?.label || "Command Center"}
-                </h1>
-                <p className="workspace-description">
-                  {activeModule?.description ||
-                    "Consistent delivery workbench with backend-backed navigation."}
-                </p>
-              </div>
             </div>
 
             <div className="workspace-header-actions">
@@ -192,20 +258,47 @@ export default function Terminal({
         </main>
 
         <AnimatePresence>
-          {showSideAssistant && (
+          {showSideAssistant && !assistantPanelMinimized && (
             <motion.div
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 520, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
+              initial={{ opacity: 0, y: 20, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1, width: assistantPanelWidth }}
+              exit={{ opacity: 0, y: 24, scale: 0.94 }}
               transition={{ type: "spring", damping: 30, stiffness: 260 }}
-              className="assistant-panel-shell"
+              className="assistant-panel-dock"
             >
               <ClaudePanel
                 mode="panel"
-                onClose={() => setClaude(false)}
+                onClose={() => setAssistantPanelMinimized(true)}
+                onResize={() =>
+                  setAssistantPanelSizeIndex(
+                    (index) => (index + 1) % ASSISTANT_PANEL_WIDTHS.length,
+                  )
+                }
+                resizeLabel={assistantPanelLabel}
+                closeLabel="Minimize"
                 showToast={showToast}
               />
             </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {showSideAssistant && assistantPanelMinimized && (
+            <motion.button
+              type="button"
+              className="assistant-minimized-trigger"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 18 }}
+              transition={{ type: "spring", damping: 24, stiffness: 280 }}
+              onClick={() => setAssistantPanelMinimized(false)}
+              data-testid="button-expand-claude"
+            >
+              <span className="assistant-minimized-title">Gemini chat</span>
+              <span className="assistant-minimized-meta">
+                Expand · Size {assistantPanelLabel}
+              </span>
+            </motion.button>
           )}
         </AnimatePresence>
       </div>
@@ -232,7 +325,11 @@ export default function Terminal({
         )}
       </AnimatePresence>
 
-      <Toast toast={toast} />
+      <Toast
+        toast={toast}
+        onDismiss={dismissToast}
+        onAction={handleToastAction}
+      />
     </div>
   );
 }
