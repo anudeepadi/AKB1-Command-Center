@@ -1,6 +1,6 @@
 # AKB1 Command Center
 
-Gemini-first delivery dashboard with a consistent workbench UI, local SQLite persistence, and a single Express server that serves both the API and the built client.
+Delivery dashboard with a consistent workbench UI, local SQLite persistence, and a single Express server that serves both the API and the built client.
 
 ## Stack
 
