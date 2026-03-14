@@ -22,6 +22,22 @@ export default function TopNav({
   onOpenCmd,
   isMobile,
 }: Props) {
+  const subtitle =
+    page === "home"
+      ? "Operating system for elite delivery leaders"
+      : activeModule
+        ? `${activeModule.label} module`
+        : "Delivery workbench";
+
+  const primaryLabel =
+    page === "home"
+      ? isMobile
+        ? "Open"
+        : "Open Workbench"
+      : isMobile
+        ? "Dashboard"
+        : "Back to Dashboard";
+
   return (
     <motion.header
       className="app-topbar"
@@ -33,11 +49,7 @@ export default function TopNav({
         <div className="topbar-mark">AK</div>
         <div>
           <div className="topbar-title">AKB1 Command Center</div>
-          <div className="topbar-subtitle">
-            {page === "home"
-              ? "Consistent dashboard shell with backend-driven state"
-              : activeModule?.description || "Delivery workbench"}
-          </div>
+          <div className="topbar-subtitle">{subtitle}</div>
         </div>
       </div>
 
@@ -101,7 +113,7 @@ export default function TopNav({
           onClick={() => onNavigate(page === "home" ? "terminal" : "home")}
           data-testid="nav-launch"
         >
-          {page === "home" ? "Open Workbench" : "Back to Dashboard"}
+          {primaryLabel}
         </button>
       </div>
     </motion.header>
