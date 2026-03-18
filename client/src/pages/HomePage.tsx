@@ -11,7 +11,7 @@ const TICKER_MODULES = [
   "KPI Engine",
   "Risk Matrix",
   "Sprint Planner",
-  "Claude AI",
+  "Gemini AI",
   "Prompt Lab",
   "Pricing Calc",
   "Decision Matrix",
@@ -23,7 +23,7 @@ const TICKER_MODULES = [
 const STATS = [
   { value: "11", label: "Tool Modules" },
   { value: "9", label: "KPI Engines" },
-  { value: "AI", label: "Claude Powered" },
+  { value: "AI", label: "Gemini Powered" },
   { value: "v2", label: "Bloomberg Mode" },
 ];
 
@@ -36,9 +36,9 @@ const FEATURES = [
   },
   {
     icon: "◆",
-    name: "Claude AI Terminal",
+    name: "Gemini AI Terminal",
     description:
-      "Streaming claude-opus-4-5 calibrated with AKB1's delivery system prompt. Real answers, zero fluff",
+      "Streaming Gemini 2.5 Flash calibrated with AKB1's delivery system prompt. Real answers, zero fluff",
   },
   {
     icon: "⚠",
@@ -73,7 +73,11 @@ const stagger = {
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] },
+  },
 };
 
 export default function HomePage({ onLaunch }: Props) {
@@ -112,9 +116,9 @@ export default function HomePage({ onLaunch }: Props) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.12, duration: 0.5 }}
         >
-          Bloomberg-style command center with 11 live calculators, real-time Claude AI, and a
-          curated prompt toolkit — built for Senior PMs, RTEs, and CTOs who operate at enterprise
-          scale.
+          Bloomberg-style command center with 11 live calculators, real-time
+          Gemini AI, and a curated prompt toolkit — built for Senior PMs, RTEs,
+          and CTOs who operate at enterprise scale.
         </motion.p>
 
         <motion.div
@@ -142,7 +146,11 @@ export default function HomePage({ onLaunch }: Props) {
           animate="visible"
         >
           {STATS.map((stat) => (
-            <motion.div key={stat.label} className="landing-stat-card" variants={fadeUp}>
+            <motion.div
+              key={stat.label}
+              className="landing-stat-card"
+              variants={fadeUp}
+            >
               <span className="landing-stat-value">{stat.value}</span>
               <span className="landing-stat-label">{stat.label}</span>
             </motion.div>
@@ -153,7 +161,9 @@ export default function HomePage({ onLaunch }: Props) {
       {/* ── Ticker ── */}
       <div className="landing-ticker" aria-label="Module names scrolling">
         <div className="landing-ticker-track">
-          <span>{tickerText} · {tickerText} · {tickerText} · </span>
+          <span>
+            {tickerText} · {tickerText} · {tickerText} ·{" "}
+          </span>
         </div>
       </div>
 
@@ -167,10 +177,13 @@ export default function HomePage({ onLaunch }: Props) {
           transition={{ duration: 0.5 }}
         >
           <span className="landing-eyebrow">What&apos;s inside</span>
-          <h2 className="landing-section-title">Every tool you actually need</h2>
+          <h2 className="landing-section-title">
+            Every tool you actually need
+          </h2>
           <p className="landing-section-sub">
-            Not a generic PM dashboard. Purpose-built for delivery leadership — each module is tuned
-            to enterprise delivery, SAFe at scale, and AI-augmented operations.
+            Not a generic PM dashboard. Purpose-built for delivery leadership —
+            each module is tuned to enterprise delivery, SAFe at scale, and
+            AI-augmented operations.
           </p>
         </motion.div>
 
@@ -182,7 +195,11 @@ export default function HomePage({ onLaunch }: Props) {
           viewport={{ once: true, margin: "-40px" }}
         >
           {FEATURES.map((feature) => (
-            <motion.article key={feature.name} className="landing-feature-card" variants={fadeUp}>
+            <motion.article
+              key={feature.name}
+              className="landing-feature-card"
+              variants={fadeUp}
+            >
               <span className="landing-feature-icon">{feature.icon}</span>
               <h3 className="landing-feature-name">{feature.name}</h3>
               <p className="landing-feature-desc">{feature.description}</p>
@@ -201,10 +218,12 @@ export default function HomePage({ onLaunch }: Props) {
           transition={{ duration: 0.5 }}
         >
           <span className="landing-eyebrow">The Interface</span>
-          <h2 className="landing-section-title">Bloomberg-grade command experience</h2>
+          <h2 className="landing-section-title">
+            Bloomberg-grade command experience
+          </h2>
           <p className="landing-section-sub">
-            Dark terminal aesthetic. Sidebar navigation. Live Claude AI panel. Command palette.
-            Every module a keystroke away.
+            Dark terminal aesthetic. Sidebar navigation. Live Gemini AI panel.
+            Command palette. Every module a keystroke away.
           </p>
         </motion.div>
 
@@ -221,18 +240,29 @@ export default function HomePage({ onLaunch }: Props) {
               <span className="dot yellow" />
               <span className="dot green" />
             </div>
-            <span className="preview-titlebar-text">AKB1 Command Center — KPI Engine</span>
+            <span className="preview-titlebar-text">
+              AKB1 Command Center — KPI Engine
+            </span>
           </div>
           <div className="preview-body">
             <div className="preview-sidebar">
               <div className="preview-sidebar-label">MODULES</div>
-              {["Brief", "KPI", "Risk", "Sprint", "Claude AI", "Prompt", "Pricing"].map(
-                (name, i) => (
-                  <div key={name} className={`preview-sidebar-item${i === 1 ? " active" : ""}`}>
-                    {name}
-                  </div>
-                ),
-              )}
+              {[
+                "Brief",
+                "KPI",
+                "Risk",
+                "Sprint",
+                "Gemini AI",
+                "Prompt",
+                "Pricing",
+              ].map((name, i) => (
+                <div
+                  key={name}
+                  className={`preview-sidebar-item${i === 1 ? " active" : ""}`}
+                >
+                  {name}
+                </div>
+              ))}
             </div>
             <div className="preview-main">
               <div className="preview-header-row">
@@ -251,17 +281,23 @@ export default function HomePage({ onLaunch }: Props) {
                   <div key={kpi.label} className="preview-kpi-cell">
                     <span className="preview-kpi-label">{kpi.label}</span>
                     <span className="preview-kpi-value">
-                      {kpi.value} <span className="preview-kpi-trend">{kpi.trend}</span>
+                      {kpi.value}{" "}
+                      <span className="preview-kpi-trend">{kpi.trend}</span>
                     </span>
                   </div>
                 ))}
               </div>
             </div>
             <div className="preview-claude-panel">
-              <div className="preview-claude-header">Claude AI</div>
-              <div className="preview-claude-msg assistant">Based on your current CPI of 1.08 and SPI of 0.96, the project is under budget but slightly behind schedule...</div>
-              <div className="preview-claude-msg user">What&apos;s the recovery plan?</div>
-              <div className="preview-claude-input">Ask Claude anything...</div>
+              <div className="preview-claude-header">Gemini AI</div>
+              <div className="preview-claude-msg assistant">
+                Based on your current CPI of 1.08 and SPI of 0.96, the project
+                is under budget but slightly behind schedule...
+              </div>
+              <div className="preview-claude-msg user">
+                What&apos;s the recovery plan?
+              </div>
+              <div className="preview-claude-input">Ask Gemini anything...</div>
             </div>
           </div>
         </motion.div>
